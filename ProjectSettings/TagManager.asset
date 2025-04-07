@@ -42,5 +42,14 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Background
+    uniqueID: 2848545719
+    locked: 0
+  - name: Game
+    uniqueID: 1410924127
+    locked: 0
+  - name: ButtonUi
+    uniqueID: 2682635977
+    locked: 0
   m_RenderingLayers:
   - Default

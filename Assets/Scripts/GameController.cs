@@ -1,128 +1,120 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameController : MonoBehaviour
 {
-    private Tube selectedTube = null;
-    private List<Ball> sameBall;
-    private ControllState currentControllState;
+    public static GameController instance;
     
     
-    //TestComand
-    public CommandInvoker commandInvoker;
-    private ICommand selectedCommand;
+    public List<TheStack> theStacks = new List<TheStack>();
+    public List<MoveState> undoMove = new List<MoveState>();
+    
+    
+    public List<HorizontalLayoutGroup> lines = new List<HorizontalLayoutGroup>();
+    public TheStack stackPrefab;
 
+    public List<int> type; 
+    public bool isCompleted = false;
+
+
+    public GameObject panelWin;
+    
+    
     private void Start()
     {
-        commandInvoker = new CommandInvoker();
-        SetControllState(ControllState.Start);
-    }
-
-    private void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
+        type = new List<int>()
         {
-            if(currentControllState == ControllState.Processing)return;
-            if(Camera.main == null ) return;
-            Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
-            if(hit.collider == null ) return;
-            if (hit.collider.CompareTag("Tube"))
-            {
-                Tube clickedTube = hit.collider.GetComponent<Tube>();
-                if (clickedTube != null)
-                {
-                    HandleTubeClick(clickedTube);
-                }
-            }
-        }
-        
-        
-    }
-
-    //Xử kí khi ấn chọn vào ống nghiệm.
-    private void HandleTubeClick(Tube clickedTube)
-    {
-        //
-        if (selectedTube == null)
+            3,1,3,2,0,1,2,0,0,1,0,2,2,1,3,3
+        };
+        if (instance == null)
         {
-            if (clickedTube.ballInTube.Count== 0) return;
-            selectedTube = clickedTube;
-            sameBall = selectedTube.GetSameBallInTube();
-            Debug.Log("Created SelectedCommand for: " + selectedTube.name);
-            selectedCommand = new SelectedCommand(sameBall, selectedTube);
-            commandInvoker.ExecuteSelectedCommand(selectedCommand);
-            
-            
-        }else
-        {
-            if (selectedTube != clickedTube)
-            {
-                SetControllState(ControllState.Processing);
-                //StartCoroutine(MoveToTube(selectedTube,clickedTube,sameBall));
-                MoveBalls(selectedTube, clickedTube);
-            }
-            else
-            {
-                commandInvoker.UndoLastSelectedCommand();
-                SetControllState(ControllState.Finished);
-            }
-        }
-    }
-
-    
- //Comman di chuyển bóng
-    public void MoveBalls(Tube fromTube, Tube toTube)
-    {
-        if (sameBall.Count > 0 && toTube.CanReciveBall(sameBall[0]))
-        {
-            ICommand movedCommand = new MoveBallCommand(sameBall, fromTube, toTube);
-            commandInvoker.ExecuteMoveCommand(movedCommand);
+            instance = this;
         }
         else
         {
-            //Trường hợp đang thêm bóng mà tube đầy chưa được xử lí
-            commandInvoker.UndoLastSelectedCommand();
+            Destroy(gameObject);
         }
-        SetControllState(ControllState.Finished);
-        GameManager.instance.CheckWinCodition();
+        SpawnStack();
     }
-
-    //Hàm undo
-    public void UndoMove()
+    private void SpawnStack()
     {
-        commandInvoker.UndoLastMoveCommand();
-    }
-    
-    //Quản lí trạng thái control
-      private void SetControllState(ControllState newState)
-    {
-        if(currentControllState == newState) return;
-        currentControllState = newState;
-        switch (currentControllState)
+        for (int i = 0; i < lines.Count; i++)
         {
-            case ControllState.Processing:
-                break;
-            case ControllState.Finished:
-                selectedTube = null;
-                break;
-            case ControllState.Start:
-                selectedTube = null;
-                break;
+            for (int j = 0; j < 3; j++)
+            {
+                var stack = Instantiate(stackPrefab, lines[i].transform);
+                theStacks.Add(stack);
+                
+            }
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                var bubble = theStacks[i].InstantiateBubble(type[4 * i + j]);
+                theStacks[i].ForcePush(bubble);
+            }
         }
     }
+    public void CheckComplete()
+    {
+        isCompleted = true;
+        foreach (var stack in theStacks)
+        {
+            if (!stack.IsSameFullColor())
+            {
+                isCompleted = false;
+                break;
+            }
+        }
+        if (isCompleted)
+        {
+            ShowWinner();
+        }
+    }
+    public void UndoStack()
+    {
+        if (undoMove.Count == 0)
+        {
+            Debug.Log("khong co luot undo nào");
+            return;
+        }
+        var undo = undoMove[undoMove.Count - 1];
+        undoMove.RemoveAt(undoMove.Count - 1);
+        if (TheStack.poppedBubble != null)
+        {
+            TheStack.poppedBubble.thisStack.PushPopBack();
+        }
+        undo.from.PushBack(undo.bubble);
+        undo.to.RemoveLastBubble();
+    }
+
+    
+
+    public void RePlayGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void QuitGame()
+    {
+        Debug.Log("Thoat game");
+        Application.Quit();
+    }
+
+    public void ShowWinner()
+    {
+        Debug.Log("Show winner");
+        panelWin.SetActive(true);
+    }
+
+    public void NextLevel()
+    {
+        Debug.Log("next level");
+    }
+    
     
 }
-//Enum quản lí trạng thái của controller
-//Dùng để tránh việc người chơi nhấn chuột khi game dang thực hiện
-public enum ControllState
-{
-    Processing,
-    Finished,
-    Start
-        
-}
-
-
