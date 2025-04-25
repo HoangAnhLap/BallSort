@@ -2,9 +2,8 @@ using System;
 using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
-using NUnit.Framework;
-using UnityEditor.Experimental;
 using UnityEngine.EventSystems;
+using DG.Tweening;
 
 public class TheStack : MonoBehaviour,IPointerDownHandler
 {
@@ -25,7 +24,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     {
         var bubble = Instantiate(bubblePrefab, transform);
         bubble.SetType(type);
-        bubble.thisStack = this;
+        bubble.stack = this;
         return bubble;
     }
     //Đẩy bóng ống
@@ -38,7 +37,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     //Lấy quả bóng đầu tiên
     public void Pop()
     {
-        if(bubbles.Count == 0) return;
+        if (bubbles.Count == 0) return;
         poppedStack = this;
         poppedBubble = bubbles[bubbles.Count - 1];
         bubbles.Remove(poppedBubble);
@@ -46,13 +45,8 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     }
     IEnumerator MoveToPosLocal(Bubble bubble,Vector3 target,System.Action callback = null)
     {
-        while (Vector3.Distance(bubble.transform.localPosition, target) > 0.1f)
-        {
-            bubble.transform.localPosition = Vector3.Lerp(bubble.transform.localPosition, target,25f * Time.deltaTime);
-            yield return null;
-        }
-        bubble.transform.localPosition = target;
-        callback?.Invoke();
+        bubble.transform.DOLocalMove(target, 0.25f).SetEase(Ease.InOutSine).OnComplete(() => callback?.Invoke());
+        yield return new WaitForSeconds(0.25f);
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -63,12 +57,12 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
         {
             //Kiểm tra xem có double click hoặc có thể đẩy bóng sang không 
             
-            if (poppedBubble.thisStack == this || CanPush(poppedBubble))
+            if (poppedBubble.stack == this || CanPush(poppedBubble))
             {
                 List<Bubble> sames = new List<Bubble>();
                 //Trường hợp có thể đẩy bóng sang một stack khác 
                 //Đẩy bóng
-                if (poppedBubble.thisStack != this)
+                if (poppedBubble.stack != this)
                 {
                     sames = poppedStack.GetSameBubbles(4 - this.bubbles.Count - 1 , poppedBubble.type);
                 }
@@ -84,7 +78,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
             {
                 var lastPop = poppedBubble;
                 Pop();
-                lastPop.thisStack.Push(lastPop);
+                lastPop.stack.Push(lastPop);
             }
         }
         //Nếu chưa lấy ra một quả từ stack này
@@ -98,62 +92,65 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     {
         bubbles.Add(bubble);
         bubble.transform.SetParent(transform);
-        Vector3 posInStack = this.GetPos();
-        //Trường hợp bóng của ống này thì đẩy lại vào ống
-        if (bubble.thisStack == this)
+        Vector3 posInStack = GetPos();
+
+        if (bubble.stack == this)
         {
-            Vector3 target = bubble.thisStack.GetPos();
-            StartCoroutine(MoveToPosLocal(bubble, target));
+            // Trả lại bóng vào cùng ống
+            Vector3 target = GetPos();
+            bubble.transform.DOLocalMove(target, 0.25f).SetEase(Ease.InOutSine);
         }
-        //Trường hợp bóng của ống khác thì di chuyển bóng tới ống chọn
         else
         {
-            Vector3 targetStack =  this.topPos.localPosition;
-            //Di chuyển tới ống chọn
-            StartCoroutine(MoveToPosLocal(bubble, targetStack,() => StartCoroutine(MoveToPosLocal(bubble,posInStack,
-                () =>
+            // Di chuyển từ ống khác đến
+            Vector3 targetStack = topPos.localPosition;
+            bubble.transform.DOLocalMove(targetStack, 0.25f).SetEase(Ease.InOutSine)
+                .OnComplete(() =>
                 {
-                    if (IsSameFullColor())
-                    {
-                        fullEffect.gameObject.SetActive(true);
-                        fullEffect.Play();
-                        Invoke(nameof(HideFullEffect),5f);
-                        GameController.instance.CheckComplete();
-                    }
+                    bubble.transform.DOLocalMove(posInStack, 0.25f).SetEase(Ease.InOutSine)
+                        .OnComplete(() =>
+                        {
+                            if (IsSameFullColor())
+                            {
+                                fullEffect.gameObject.SetActive(true);
+                                fullEffect.Play();
+                                Invoke(nameof(HideFullEffect), 5f);
+                                GameController.instance.CheckComplete();
+                            }
+                        });
+                });
 
-                    
-                }))));
             var moveState = new MoveState()
             {
                 bubble = bubble,
-                from = bubble.thisStack,
+                from = bubble.stack,
                 to = this
             };
             GameController.instance.undoMove.Add(moveState);
-            
-
         }
-        bubble.thisStack = this;
+
+        bubble.stack = this;
     }
+
     IEnumerator IEPushAllSame(List<Bubble> sames)
     {
-        if(sames == null || sames.Count == 0) yield break;
-        bool wait = false;
-        while(sames.Count > 0)
+        if (sames == null || sames.Count == 0) yield break;
+
+        while (sames.Count > 0)
         {
-            if (!wait)
+            Bubble b = sames[0];
+            yield return poppedStack.StartCoroutine(MoveToPosLocal(b, poppedStack.topPos.localPosition, () =>
             {
-                wait = true;
-             yield return  poppedStack.StartCoroutine(MoveToPosLocal(sames[0], poppedStack.topPos.localPosition,
-                    () => Push(sames[0])));
-                sames.RemoveAt(0);
-                wait = false;
-            }
-            yield return null;
+                Push(b);
+            }));
+
+            sames.RemoveAt(0);
+            yield return new WaitForSeconds(0.1f);
         }
 
         poppedStack = null;
     }
+
     
     //Kiểm tra xem có đẩy bóng vào được không
     public bool CanPush(Bubble bubble)
@@ -183,7 +180,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
         bubble.transform.SetParent(transform);
         Vector3 target = this.GetPos();
         bubble.transform.localPosition = target;
-        bubble.thisStack = this;
+        bubble.stack = this;
     }
 
     public void RemoveLastBubble()

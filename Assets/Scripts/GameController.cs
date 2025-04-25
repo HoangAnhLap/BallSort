@@ -16,19 +16,15 @@ public class GameController : MonoBehaviour
     public List<HorizontalLayoutGroup> lines = new List<HorizontalLayoutGroup>();
     public TheStack stackPrefab;
 
-    public List<int> type; 
     public bool isCompleted = false;
 
 
     public GameObject panelWin;
+    private LevelData levelData;
     
     
     private void Start()
     {
-        type = new List<int>()
-        {
-            3,1,3,2,0,1,2,0,0,1,0,2,2,1,3,3
-        };
         if (instance == null)
         {
             instance = this;
@@ -37,10 +33,16 @@ public class GameController : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        SpawnStack();
+        SpawnLevel();
     }
-    private void SpawnStack()
+
+
+    public void SpawnLevel()
     {
+        string path = string.Format("Levels/level_{0}", Level + 1);
+        var textAsset = Resources.Load(path) as TextAsset;
+        levelData = JsonUtility.FromJson<LevelData>(textAsset.text);
+        int numStack = levelData.numStack;
         for (int i = 0; i < lines.Count; i++)
         {
             for (int j = 0; j < 3; j++)
@@ -54,11 +56,13 @@ public class GameController : MonoBehaviour
         {
             for (int j = 0; j < 4; j++)
             {
-                var bubble = theStacks[i].InstantiateBubble(type[4 * i + j]);
+                int type = levelData.bubbleTypes[4 * i + j];
+                var bubble = theStacks[i].InstantiateBubble(type);
                 theStacks[i].ForcePush(bubble);
             }
         }
     }
+    
     public void CheckComplete()
     {
         isCompleted = true;
@@ -86,7 +90,7 @@ public class GameController : MonoBehaviour
         undoMove.RemoveAt(undoMove.Count - 1);
         if (TheStack.poppedBubble != null)
         {
-            TheStack.poppedBubble.thisStack.PushPopBack();
+            TheStack.poppedBubble.stack.PushPopBack();
         }
         undo.from.PushBack(undo.bubble);
         undo.to.RemoveLastBubble();
@@ -94,7 +98,7 @@ public class GameController : MonoBehaviour
 
     
 
-    public void RePlayGame()
+    public void Reload()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
@@ -111,10 +115,18 @@ public class GameController : MonoBehaviour
         panelWin.SetActive(true);
     }
 
+    
+    public static int Level
+    {
+        get { return PlayerPrefs.GetInt("_level", 0); }
+        set { PlayerPrefs.SetInt("_level", value); }
+    }
+
     public void NextLevel()
     {
-        Debug.Log("next level");
+        Level++;
+        Debug.Log("Level current" + Level);
+        Reload();
     }
-    
     
 }

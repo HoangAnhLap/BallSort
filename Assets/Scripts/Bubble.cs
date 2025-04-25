@@ -5,7 +5,7 @@ public class Bubble : MonoBehaviour
 {
     public int type;
     public Sprite[] sprites;
-    public TheStack thisStack;
+    public TheStack stack;
     public static float size = 90;
 
 
