@@ -41,12 +41,12 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
         poppedStack = this;
         poppedBubble = bubbles[bubbles.Count - 1];
         bubbles.Remove(poppedBubble);
-        StartCoroutine(MoveToPosLocal(poppedBubble, topPos.localPosition));
+        MoveToPosLocal(poppedBubble, topPos.localPosition);
+        SoundManager.instance.SoundPlay(SoundManager.instance.ballSelected);
     }
-    IEnumerator MoveToPosLocal(Bubble bubble,Vector3 target,System.Action callback = null)
+    private void MoveToPosLocal(Bubble bubble,Vector3 target,System.Action callback = null)
     {
-        bubble.transform.DOLocalMove(target, 0.25f).SetEase(Ease.InOutSine).OnComplete(() => callback?.Invoke());
-        yield return new WaitForSeconds(0.25f);
+        bubble.transform.DOLocalMove(target, 0.15f).SetEase(Ease.InOutSine).OnComplete(() => callback?.Invoke());
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -66,7 +66,6 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
                 {
                     sames = poppedStack.GetSameBubbles(4 - this.bubbles.Count - 1 , poppedBubble.type);
                 }
-                
                 Push(poppedBubble);
                 
                 if (sames != null && sames.Count > 0) StartCoroutine(IEPushAllSame(sames));
@@ -86,7 +85,6 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
         {
             Pop();
         }
-        
     }
     public void Push(Bubble bubble)
     {
@@ -99,6 +97,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
             // Trả lại bóng vào cùng ống
             Vector3 target = GetPos();
             bubble.transform.DOLocalMove(target, 0.25f).SetEase(Ease.InOutSine);
+            SoundManager.instance.SoundPlay(SoundManager.instance.ballPut);
         }
         else
         {
@@ -112,10 +111,15 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
                         {
                             if (IsSameFullColor())
                             {
+                                SoundManager.instance.SoundPlay(SoundManager.instance.completeStack);
                                 fullEffect.gameObject.SetActive(true);
                                 fullEffect.Play();
                                 Invoke(nameof(HideFullEffect), 5f);
                                 GameController.instance.CheckComplete();
+                            }
+                            else
+                            {
+                                SoundManager.instance.SoundPlay(SoundManager.instance.merge);
                             }
                         });
                 });
@@ -139,10 +143,10 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
         while (sames.Count > 0)
         {
             Bubble b = sames[0];
-            yield return poppedStack.StartCoroutine(MoveToPosLocal(b, poppedStack.topPos.localPosition, () =>
+            MoveToPosLocal(b, poppedStack.topPos.localPosition, () =>
             {
                 Push(b);
-            }));
+            });
 
             sames.RemoveAt(0);
             yield return new WaitForSeconds(0.1f);

@@ -33,7 +33,13 @@ public class GameController : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        if (Level == 5)
+        {
+            Level = 0;
+        }
         SpawnLevel();
+
     }
 
 
@@ -128,5 +134,7 @@ public class GameController : MonoBehaviour
         Debug.Log("Level current" + Level);
         Reload();
     }
+    
+ 
     
 }
