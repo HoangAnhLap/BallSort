@@ -7,12 +7,12 @@ using UnityEngine.SceneManagement;
 public class GameController : MonoBehaviour
 {
     public static GameController instance;
-    
-    
+
+
     public List<TheStack> theStacks = new List<TheStack>();
     public List<MoveState> undoMove = new List<MoveState>();
-    
-    
+
+
     public List<HorizontalLayoutGroup> lines = new List<HorizontalLayoutGroup>();
     public TheStack stackPrefab;
 
@@ -21,8 +21,8 @@ public class GameController : MonoBehaviour
 
     public GameObject panelWin;
     private LevelData levelData;
-    
-    
+
+    //Thêm chức năng tính số lượt cho di chuyển bóng
     private void Start()
     {
         if (instance == null)
@@ -33,42 +33,49 @@ public class GameController : MonoBehaviour
         {
             Destroy(gameObject);
         }
-
-        if (Level == 5)
-        {
-            Level = 0;
-        }
         SpawnLevel();
-
     }
 
 
     public void SpawnLevel()
     {
-        string path = string.Format("Levels/level_{0}", Level + 1);
+        string path = string.Format("Levels/level_{0}",  Level);
         var textAsset = Resources.Load(path) as TextAsset;
         levelData = JsonUtility.FromJson<LevelData>(textAsset.text);
         int numStack = levelData.numStack;
+        int count = 0;
+        //Điều chỉnh lại việc spawn stack
+        //Dựa trên số lượng sẽ spawn ở level mà quyết định một dòng có baon stack
+        //Spawn stack
         for (int i = 0; i < lines.Count; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                var stack = Instantiate(stackPrefab, lines[i].transform);
-                theStacks.Add(stack);
-                
-            }
-        }
-        for (int i = 0; i < 4; i++)
         {
             for (int j = 0; j < 4; j++)
             {
+                count += 1;
+                if (count > numStack) break;
+                var stack = Instantiate(stackPrefab, lines[i].transform);
+                theStacks.Add(stack);
+            }
+        }
+
+
+        //Spawn Bubbles
+        for (int i = 0; i < numStack -2 ; i++)//Số lượng stack
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                if (4 * i + j > levelData.bubbleTypes.Count - 1)
+                {
+                    break;
+                }
+
                 int type = levelData.bubbleTypes[4 * i + j];
                 var bubble = theStacks[i].InstantiateBubble(type);
                 theStacks[i].ForcePush(bubble);
             }
         }
     }
-    
+
     public void CheckComplete()
     {
         isCompleted = true;
@@ -80,11 +87,13 @@ public class GameController : MonoBehaviour
                 break;
             }
         }
+
         if (isCompleted)
         {
             ShowWinner();
         }
     }
+
     public void UndoStack()
     {
         if (undoMove.Count == 0)
@@ -92,17 +101,18 @@ public class GameController : MonoBehaviour
             Debug.Log("khong co luot undo nào");
             return;
         }
+
         var undo = undoMove[undoMove.Count - 1];
         undoMove.RemoveAt(undoMove.Count - 1);
         if (TheStack.poppedBubble != null)
         {
             TheStack.poppedBubble.stack.PushPopBack();
         }
+
         undo.from.PushBack(undo.bubble);
         undo.to.RemoveLastBubble();
     }
 
-    
 
     public void Reload()
     {
@@ -121,7 +131,7 @@ public class GameController : MonoBehaviour
         panelWin.SetActive(true);
     }
 
-    
+
     public static int Level
     {
         get { return PlayerPrefs.GetInt("_level", 0); }
@@ -134,7 +144,4 @@ public class GameController : MonoBehaviour
         Debug.Log("Level current" + Level);
         Reload();
     }
-    
- 
-    
 }
