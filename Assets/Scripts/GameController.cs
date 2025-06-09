@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
@@ -21,6 +22,20 @@ public class GameController : MonoBehaviour
 
     public GameObject panelWin;
     private LevelData levelData;
+    
+    
+    //Ui numbermoved
+    public TextMeshProUGUI countDownText;
+    private float currentTime;
+    //Người chơi đã bắt đầu chơi chưa
+    public bool isPlayed = false;
+    
+    
+    //
+    public TextMeshProUGUI levelText;
+    
+    
+
 
     //Thêm chức năng tính số lượt cho di chuyển bóng
     private void Start()
@@ -36,6 +51,14 @@ public class GameController : MonoBehaviour
         SpawnLevel();
     }
 
+    private void Update()
+    {
+        if (isPlayed)
+        {
+            UpdateTimer();
+        }
+    }
+
 
     public void SpawnLevel()
     {
@@ -43,7 +66,9 @@ public class GameController : MonoBehaviour
         var textAsset = Resources.Load(path) as TextAsset;
         levelData = JsonUtility.FromJson<LevelData>(textAsset.text);
         int numStack = levelData.numStack;
+        currentTime = (numStack - 2) * 3;
         int count = 0;
+        levelText.text = "Level " + Level;
         //Điều chỉnh lại việc spawn stack
         //Dựa trên số lượng sẽ spawn ở level mà quyết định một dòng có baon stack
         //Spawn stack
@@ -74,8 +99,11 @@ public class GameController : MonoBehaviour
                 theStacks[i].ForcePush(bubble);
             }
         }
+
+
     }
 
+    
     public void CheckComplete()
     {
         isCompleted = true;
@@ -144,4 +172,22 @@ public class GameController : MonoBehaviour
         Debug.Log("Level current" + Level);
         Reload();
     }
+
+    private void UpdateTimer()
+    {
+        Debug.Log(currentTime);
+        currentTime -= Time.deltaTime;
+        int seconds = Mathf.FloorToInt(currentTime % 60);
+        int  minutes = Mathf.FloorToInt(currentTime / 60);
+        countDownText.text = $"{minutes:00}:{seconds:00}";
+        if (currentTime <= 0)
+        {
+            countDownText.text = "00:00";
+            SoundManager.instance.SourceSoundPlay(SoundManager.instance.lose);
+            Debug.Log("You lose");
+
+        }
+    }
+
+    
 }

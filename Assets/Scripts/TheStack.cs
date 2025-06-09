@@ -37,6 +37,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     //Lấy quả bóng đầu tiên
     public void Pop()
     {
+        GameController.instance.isPlayed = true;
         if (bubbles.Count == 0) return;
         poppedStack = this;
         poppedBubble = bubbles[bubbles.Count - 1];

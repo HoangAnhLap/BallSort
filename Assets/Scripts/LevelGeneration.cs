@@ -59,7 +59,6 @@ public class LevelGeneration : MonoBehaviour
             bubbleTypes.Add(listBall[index]);
             listBall.RemoveAt(index);
         }
-
         var levelData = new LevelData()
         {
             numStack = numStack,
