@@ -48,6 +48,7 @@ public class GameController : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
         SpawnLevel();
     }
 
@@ -66,7 +67,8 @@ public class GameController : MonoBehaviour
         var textAsset = Resources.Load(path) as TextAsset;
         levelData = JsonUtility.FromJson<LevelData>(textAsset.text);
         int numStack = levelData.numStack;
-        currentTime = (numStack - 2) * 3;
+        currentTime = (numStack - 2) * 15;
+        UpdateTimer();
         int count = 0;
         levelText.text = "Level " + Level;
         //Điều chỉnh lại việc spawn stack
@@ -102,8 +104,6 @@ public class GameController : MonoBehaviour
 
 
     }
-
-    
     public void CheckComplete()
     {
         isCompleted = true;
@@ -183,7 +183,6 @@ public class GameController : MonoBehaviour
         if (currentTime <= 0)
         {
             countDownText.text = "00:00";
-            SoundManager.instance.SourceSoundPlay(SoundManager.instance.lose);
             Debug.Log("You lose");
 
         }

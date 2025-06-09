@@ -11,7 +11,6 @@ public class SoundManager : MonoBehaviour
     public AudioClip ballSelected;
     public AudioClip merge;
     public AudioClip completeStack;
-    public AudioClip lose;
 
     private void Start()
     {
@@ -32,11 +31,5 @@ public class SoundManager : MonoBehaviour
         SFX.PlayOneShot(clip);   
     }
 
-    public void SourceSoundPlay(AudioClip clip)
-    {
-        SFX.PlayOneShot(clip);   
-        backgroundMusic.Stop();
-        
-    }
     
 }
