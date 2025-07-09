@@ -28,7 +28,7 @@ public class GameController : MonoBehaviour
     public TextMeshProUGUI countDownText;
     private float currentTime;
     //Người chơi đã bắt đầu chơi chưa
-    public bool isPlayed = false;
+    public bool isStared = false;
     
     
     //
@@ -54,7 +54,7 @@ public class GameController : MonoBehaviour
 
     private void Update()
     {
-        if (isPlayed)
+        if (isStared)
         {
             UpdateTimer();
         }
@@ -70,7 +70,7 @@ public class GameController : MonoBehaviour
         currentTime = (numStack - 2) * 15;
         UpdateTimer();
         int count = 0;
-        levelText.text = "Level " + Level;
+        levelText.text = "Level: " + Level;
         //Điều chỉnh lại việc spawn stack
         //Dựa trên số lượng sẽ spawn ở level mà quyết định một dòng có baon stack
         //Spawn stack
@@ -175,7 +175,6 @@ public class GameController : MonoBehaviour
 
     private void UpdateTimer()
     {
-        Debug.Log(currentTime);
         currentTime -= Time.deltaTime;
         int seconds = Mathf.FloorToInt(currentTime % 60);
         int  minutes = Mathf.FloorToInt(currentTime / 60);
