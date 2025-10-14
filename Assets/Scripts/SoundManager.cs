@@ -23,7 +23,7 @@ public class SoundManager : MonoBehaviour
             Destroy(gameObject);
         }
         DontDestroyOnLoad(this);
-        backgroundMusic.resource = Resources.Load<AudioClip>("Sounds/BGSound");
+        //backgroundMusic.resource = Resources.Load<AudioClip>("Sounds/BGSound");
         backgroundMusic.Play();
     }
     public void SoundPlay(AudioClip clip)

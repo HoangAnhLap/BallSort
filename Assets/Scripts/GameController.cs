@@ -23,14 +23,6 @@ public class GameController : MonoBehaviour
     public GameObject panelWin;
     private LevelData levelData;
     
-    
-    //Ui numbermoved
-    public TextMeshProUGUI countDownText;
-    private float currentTime;
-    //Người chơi đã bắt đầu chơi chưa
-    public bool isStared = false;
-    
-    
     //
     public TextMeshProUGUI levelText;
     
@@ -54,10 +46,7 @@ public class GameController : MonoBehaviour
 
     private void Update()
     {
-        if (isStared)
-        {
-            UpdateTimer();
-        }
+        
     }
 
 
@@ -67,8 +56,6 @@ public class GameController : MonoBehaviour
         var textAsset = Resources.Load(path) as TextAsset;
         levelData = JsonUtility.FromJson<LevelData>(textAsset.text);
         int numStack = levelData.numStack;
-        currentTime = (numStack - 2) * 15;
-        UpdateTimer();
         int count = 0;
         levelText.text = "Level: " + Level;
         //Điều chỉnh lại việc spawn stack
@@ -172,20 +159,5 @@ public class GameController : MonoBehaviour
         Debug.Log("Level current" + Level);
         Reload();
     }
-
-    private void UpdateTimer()
-    {
-        currentTime -= Time.deltaTime;
-        int seconds = Mathf.FloorToInt(currentTime % 60);
-        int  minutes = Mathf.FloorToInt(currentTime / 60);
-        countDownText.text = $"{minutes:00}:{seconds:00}";
-        if (currentTime <= 0)
-        {
-            countDownText.text = "00:00";
-            Debug.Log("You lose");
-
-        }
-    }
-
     
 }
