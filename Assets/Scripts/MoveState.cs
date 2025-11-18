@@ -1,9 +1,10 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 [Serializable]
 public class MoveState
 {
     public TheStack from;
     public TheStack to;
-    public Bubble bubble;
+    public List<Bubble> bubble;
 }

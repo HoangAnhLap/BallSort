@@ -62,7 +62,7 @@ public class LevelGeneration : MonoBehaviour
         var levelData = new LevelData()
         {
             numStack = numStack,
-            bubbleTypes = bubbleTypes,
+           // bubbleTypes = bubbleTypes,
         };
 
         var content = JsonUtility.ToJson(levelData);

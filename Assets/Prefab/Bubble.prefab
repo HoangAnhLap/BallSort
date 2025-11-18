@@ -66,7 +66,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -2021173918079641696, guid: a373190d974b61f4b81afafa2395d539, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 35a7b6bfbcedfb6498cd29191265c376, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -90,12 +90,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 0
   sprites:
-  - {fileID: -2021173918079641696, guid: a373190d974b61f4b81afafa2395d539, type: 3}
-  - {fileID: -4567835045031884752, guid: 170a100e725fb8049b03d3c730aaeee9, type: 3}
-  - {fileID: 5153044214874435941, guid: 4dc0029dae059f64eaa730a72a3d0c0e, type: 3}
-  - {fileID: -4257300284075581417, guid: 2644bbe0eaf50d546a986b778a0d1d7f, type: 3}
-  - {fileID: 3465286685962602723, guid: 422e8edebd95c974b80cb46553f1740d, type: 3}
-  - {fileID: 2434161981773447329, guid: 004a460d82c41df43b93bab1f5c1acfd, type: 3}
-  - {fileID: 5864501256832516825, guid: eb87bb24ab18c7f44bb9068482b37c19, type: 3}
-  - {fileID: 2459698237312560550, guid: e6483689dc1da294d9c786ee2be150ce, type: 3}
-  thisStack: {fileID: 0}
+  - {fileID: -1128348689, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  - {fileID: -53553895, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  - {fileID: 716961169, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  - {fileID: 274641403, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  - {fileID: 384399616, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  - {fileID: -544216497, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  - {fileID: 819356476, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  - {fileID: -2063361399, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  HideSprite: {fileID: -1152421575, guid: c01705973d4dee54a81cc25ba00adcc4, type: 3}
+  stack: {fileID: 0}

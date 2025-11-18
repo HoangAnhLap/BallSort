@@ -20,16 +20,22 @@ public class GameController : MonoBehaviour
     public bool isCompleted = false;
 
 
-    public GameObject panelWin;
-    private LevelData levelData;
-    
-    //
-    public TextMeshProUGUI levelText;
-    
-    
+    [SerializeField] private GameObject panelWin;
+    [SerializeField]private Button continueBtn;
 
+    [SerializeField] private GameObject loading;
+
+
+    private LevelData levelData;
+    public GameMode Mode { get; set; }
 
     //Thêm chức năng tính số lượt cho di chuyển bóng
+
+    private void Awake()
+    {
+        SetStatusGame(GameStatus.Loading);
+    }
+
     private void Start()
     {
         if (instance == null)
@@ -41,23 +47,21 @@ public class GameController : MonoBehaviour
             Destroy(gameObject);
         }
 
-        SpawnLevel();
-    }
+        continueBtn.onClick.AddListener(Continue);
 
-    private void Update()
-    {
-        
+
     }
 
 
     public void SpawnLevel()
     {
-        string path = string.Format("Levels/level_{0}",  Level);
+        SetStatusGame(GameStatus.Playing);
+        Mode = DataPlayerToSave.Level % 3 == 0 ? GameMode.Challenging : GameMode.Classic;
+        string path = $"Levels/level_{DataPlayerToSave.Level}";
         var textAsset = Resources.Load(path) as TextAsset;
         levelData = JsonUtility.FromJson<LevelData>(textAsset.text);
         int numStack = levelData.numStack;
         int count = 0;
-        levelText.text = "Level: " + Level;
         //Điều chỉnh lại việc spawn stack
         //Dựa trên số lượng sẽ spawn ở level mà quyết định một dòng có baon stack
         //Spawn stack
@@ -74,7 +78,7 @@ public class GameController : MonoBehaviour
 
 
         //Spawn Bubbles
-        for (int i = 0; i < numStack -2 ; i++)//Số lượng stack
+        for (int i = 0; i < numStack - 2; i++) //Số lượng stack
         {
             for (int j = 0; j < 4; j++)
             {
@@ -84,13 +88,29 @@ public class GameController : MonoBehaviour
                 }
 
                 int type = levelData.bubbleTypes[4 * i + j];
-                var bubble = theStacks[i].InstantiateBubble(type);
+                Bubble bubble;
+                if (Mode == GameMode.Challenging)
+                {
+                    if (j == 3)
+                    {
+                        bubble = theStacks[i].InstantiateBubble(type, false);
+                    }
+                    else
+                    {
+                        bubble = theStacks[i].InstantiateBubble(type, true);
+                    }
+                }
+                else
+                {
+                    bubble = theStacks[i].InstantiateBubble(type, false);
+                }
+
                 theStacks[i].ForcePush(bubble);
             }
         }
 
-
     }
+
     public void CheckComplete()
     {
         isCompleted = true;
@@ -105,11 +125,41 @@ public class GameController : MonoBehaviour
 
         if (isCompleted)
         {
-            ShowWinner();
+            SetStatusGame(GameStatus.Completed);
         }
     }
 
-    public void UndoStack()
+    private void OnWin()
+    {
+        panelWin.SetActive(true);
+        
+    }
+
+    private void Reload()
+    {
+        panelWin.SetActive(false);
+        loading.SetActive(true);
+        for (int i = 0; i < theStacks.Count; i++)
+        {
+            /*theStacks[i].gameObject.SetActive(false);
+            theStacks.Remove(theStacks[i]);*/
+            Destroy(theStacks[i].gameObject);
+        }
+        theStacks.Clear();
+        SpawnLevel();
+    }
+
+    private void Continue()
+    {
+        DataPlayerToSave.NextLevel();
+        SetStatusGame(GameStatus.Loading);
+    }
+
+    private void ReturnBubble()
+    {
+    }
+
+    /*public void UndoStack()
     {
         if (undoMove.Count == 0)
         {
@@ -126,38 +176,60 @@ public class GameController : MonoBehaviour
 
         undo.from.PushBack(undo.bubble);
         undo.to.RemoveLastBubble();
-    }
+    }*/
 
 
-    public void Reload()
+    /*public void Reload()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
+    }*/
 
-    public void QuitGame()
+    /*public void QuitGame()
     {
         Debug.Log("Thoat game");
         Application.Quit();
-    }
+    }*/
 
-    public void ShowWinner()
+
+    private void SetStatusGame(GameStatus s)
     {
-        Debug.Log("Show winner");
-        panelWin.SetActive(true);
+        switch (s)
+        {
+            case GameStatus.Loading:
+            {
+                Debug.Log("Loading level");
+                Reload();
+                break;
+            }
+            case GameStatus.Playing:
+            {
+                Debug.Log("Playing");
+                break;
+            }
+            case GameStatus.Completed:
+            {
+                Debug.Log("Completed");
+                OnWin();
+                break;
+            }
+            case GameStatus.Started:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(s), s, null);
+        }
     }
+}
 
+public enum GameStatus
+{
+    Loading,
+    Started,
+    Playing,
+    Completed,
+}
 
-    public static int Level
-    {
-        get { return PlayerPrefs.GetInt("_level", 0); }
-        set { PlayerPrefs.SetInt("_level", value); }
-    }
-
-    public void NextLevel()
-    {
-        Level++;
-        Debug.Log("Level current" + Level);
-        Reload();
-    }
-    
+public enum GameMode
+{
+    Classic,
+    Challenging
 }

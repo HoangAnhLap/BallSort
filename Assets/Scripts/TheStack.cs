@@ -16,14 +16,21 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     
     public static Bubble poppedBubble;
     public static TheStack poppedStack;
-    
-    //
-   
+    private TheStack lastStack;
 
-    public Bubble InstantiateBubble(int type)
+    //
+
+
+    private void Start()
+    {
+        poppedStack = null;
+        poppedBubble = null;
+    }
+
+    public Bubble InstantiateBubble(int type, bool hide)
     {
         var bubble = Instantiate(bubblePrefab, transform);
-        bubble.SetType(type);
+        bubble.SetType(type, hide);
         bubble.stack = this;
         return bubble;
     }
@@ -31,6 +38,10 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     public void ForcePush(Bubble bubble)
     {
         if(bubbles.Count == 4)return;
+        /*if (bubbles.Count != 3)
+        {
+            bubble.Hide();
+        }*/
         bubbles.Add(bubble);
         bubble.transform.localPosition = GetPos();
     }
@@ -39,7 +50,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     {
         if (bubbles.Count == 0) return;
         poppedStack = this;
-        poppedBubble = bubbles[bubbles.Count - 1];
+        poppedBubble = bubbles[^1];
         bubbles.Remove(poppedBubble);
         MoveToPosLocal(poppedBubble, topPos.localPosition);
         SoundManager.instance.SoundPlay(SoundManager.instance.ballSelected);
@@ -59,12 +70,15 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
             
             if (poppedBubble.stack == this || CanPush(poppedBubble))
             {
-                List<Bubble> sames = new List<Bubble>();
                 //Trường hợp có thể đẩy bóng sang một stack khác 
                 //Đẩy bóng
+                lastStack = poppedStack;
+                List<Bubble> sames = new List<Bubble>();
                 if (poppedBubble.stack != this)
                 {
-                    sames = poppedStack.GetSameBubbles(4 - this.bubbles.Count - 1 , poppedBubble.type);
+                    int maxBonus = 4 - this.bubbles.Count - 1;
+                    sames = poppedStack.GetSameBubbles(maxBonus , poppedBubble.type);
+                    
                 }
                 Push(poppedBubble);
                 
@@ -96,19 +110,30 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
         {
             // Trả lại bóng vào cùng ống
             Vector3 target = GetPos();
-            bubble.transform.DOLocalMove(target, 0.25f).SetEase(Ease.InOutSine);
+            bubble.transform.DOLocalMove(target, 0.15f).SetEase(Ease.InOutSine);
             SoundManager.instance.SoundPlay(SoundManager.instance.ballPut);
         }
         else
         {
             // Di chuyển từ ống khác đến
             Vector3 targetStack = topPos.localPosition;
-            bubble.transform.DOLocalMove(targetStack, 0.25f).SetEase(Ease.InOutSine)
+            
+            bubble.transform.DOLocalMove(targetStack, 0.2f).SetEase(Ease.InOutSine)
                 .OnComplete(() =>
                 {
-                    bubble.transform.DOLocalMove(posInStack, 0.25f).SetEase(Ease.InOutSine)
+                    
+                    bubble.transform.DOLocalMove(posInStack, 0.2f).SetEase(Ease.InOutSine)
                         .OnComplete(() =>
                         {
+                            if (lastStack.bubbles.Count > 0 && lastStack != null)
+                            {
+                                if (lastStack.bubbles[^1].isHidden)
+                                {
+                                    lastStack.bubbles[^1].Appear();
+                                }
+                            }
+                            
+                            
                             if (IsSameFullColor())
                             {
                                 SoundManager.instance.SoundPlay(SoundManager.instance.completeStack);
@@ -124,20 +149,20 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
                         });
                 });
 
-            var moveState = new MoveState()
+            /*var moveState = new MoveState()
             {
                 bubble = bubble,
                 from = bubble.stack,
                 to = this
             };
-            GameController.instance.undoMove.Add(moveState);
+            GameController.instance.undoMove.Add(moveState);*/
         }
 
         bubble.stack = this;
     }
-
     IEnumerator IEPushAllSame(List<Bubble> sames)
     {
+        
         if (sames == null || sames.Count == 0) yield break;
 
         while (sames.Count > 0)
@@ -159,7 +184,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
     //Kiểm tra xem có đẩy bóng vào được không
     public bool CanPush(Bubble bubble)
     {
-        return (bubbles.Count == 0 || bubble.type == bubbles[bubbles.Count - 1].type && bubbles.Count != 4);
+        return (bubbles.Count == 0 || bubble.type == bubbles[^1].type && bubbles.Count != 4);
     }
     public Vector3 GetPos()
     {
@@ -197,13 +222,14 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
         fullEffect.gameObject.SetActive(false);
     }
     //Lấy danh sách bóng tương tự có thể được di chuyển
-    public List<Bubble> GetSameBubbles(int maxBonus, int type)
+    private List<Bubble> GetSameBubbles(int maxBonus, int type)
     {
         if (maxBonus <= 0) return null;
         List<Bubble> list = new List<Bubble>();
         for (int i = poppedStack.bubbles.Count - 1; i >= 0 && list.Count < maxBonus;)
         {
-            if (poppedStack.bubbles[i].type == type)
+            
+            if (poppedStack.bubbles[i].type == type && !poppedStack.bubbles[i].isHidden)
             {
                 list.Add(poppedStack.bubbles[i]);
                 poppedStack.bubbles.RemoveAt(i);
@@ -213,6 +239,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
             {
                 return list;
             }
+            
         }
         return list;
     }
@@ -224,7 +251,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
         int type  = bubbles[0].type;
         for (int i = 0; i < 4; i++)
         {
-            if (bubbles[i].type != type)
+            if (bubbles[i].type != type && !bubbles[i].isHidden)
             {
                 return false;
             }
@@ -232,4 +259,7 @@ public class TheStack : MonoBehaviour,IPointerDownHandler
 
         return true;
     }
+    
+    
+    
 }
